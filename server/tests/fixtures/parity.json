@@ -1,0 +1,258 @@
+{
+ "a": "It is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife. Café owners don’t agree!",
+ "b": "IT is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. Naïve readers disagree.",
+ "tokens": [
+  [
+   "it",
+   0,
+   2
+  ],
+  [
+   "is",
+   3,
+   5
+  ],
+  [
+   "a",
+   6,
+   7
+  ],
+  [
+   "truth",
+   8,
+   13
+  ],
+  [
+   "universally",
+   14,
+   25
+  ],
+  [
+   "acknowledged",
+   26,
+   38
+  ],
+  [
+   "that",
+   40,
+   44
+  ],
+  [
+   "a",
+   45,
+   46
+  ],
+  [
+   "single",
+   47,
+   53
+  ],
+  [
+   "man",
+   54,
+   57
+  ],
+  [
+   "in",
+   58,
+   60
+  ],
+  [
+   "possession",
+   61,
+   71
+  ],
+  [
+   "of",
+   72,
+   74
+  ],
+  [
+   "a",
+   75,
+   76
+  ],
+  [
+   "good",
+   77,
+   81
+  ],
+  [
+   "fortune",
+   82,
+   89
+  ],
+  [
+   "must",
+   90,
+   94
+  ],
+  [
+   "be",
+   95,
+   97
+  ],
+  [
+   "in",
+   98,
+   100
+  ],
+  [
+   "want",
+   101,
+   105
+  ],
+  [
+   "of",
+   106,
+   108
+  ],
+  [
+   "a",
+   109,
+   110
+  ],
+  [
+   "wife",
+   111,
+   115
+  ],
+  [
+   "cafe",
+   117,
+   121
+  ],
+  [
+   "owners",
+   122,
+   128
+  ],
+  [
+   "dont",
+   129,
+   134
+  ],
+  [
+   "agree",
+   135,
+   140
+  ]
+ ],
+ "fnv": [
+  [
+   "",
+   2166136261
+  ],
+  [
+   "a",
+   3826002220
+  ],
+  [
+   "hello world",
+   3582672807
+  ],
+  [
+   "naïve café",
+   1954863637
+  ]
+ ],
+ "permA": [
+  434237311,
+  1513829059,
+  750819979,
+  1173505301
+ ],
+ "permB": [
+  1925393290,
+  729002158,
+  114214100,
+  535774210
+ ],
+ "sigA": [
+  12074756,
+  65899848,
+  89027487,
+  136657,
+  104789017,
+  121897337,
+  154346522,
+  105290988
+ ],
+ "compare": {
+  "inter": 19,
+  "jaccard": 0.7307692307692307,
+  "containment": 0.8260869565217391,
+  "minhash": 0.6953125,
+  "longestRun": 23,
+  "rangesA": [
+   [
+    0,
+    115
+   ]
+  ],
+  "rangesB": [
+   [
+    0,
+    116
+   ]
+  ]
+ },
+ "sentences": [
+  {
+   "text": "It is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife.",
+   "s": 0,
+   "e": 116
+  },
+  {
+   "text": "Café owners don’t agree!",
+   "s": 117,
+   "e": 141
+  }
+ ],
+ "units": [
+  {
+   "text": "It is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife.",
+   "s": 0,
+   "e": 116,
+   "w": 23
+  },
+  {
+   "text": "Café owners don’t agree! IT is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.",
+   "s": 117,
+   "e": 259,
+   "w": 27
+  }
+ ],
+ "windows": [
+  {
+   "text": "IT is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.",
+   "s": 0,
+   "e": 117
+  },
+  {
+   "text": "IT is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. It is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife.",
+   "s": 0,
+   "e": 258
+  },
+  {
+   "text": "IT is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. It is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife. Café owners don’t agree!",
+   "s": 0,
+   "e": 283
+  },
+  {
+   "text": "It is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife.",
+   "s": 142,
+   "e": 258
+  },
+  {
+   "text": "It is a truth universally acknowledged, that a single man in possession of a good fortune must be in want of a wife. Café owners don’t agree!",
+   "s": 142,
+   "e": 283
+  },
+  {
+   "text": "Café owners don’t agree!",
+   "s": 259,
+   "e": 283
+  }
+ ]
+}

@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tracer — content provenance</title>
+<meta name="description" content="Paste a text and some candidate sources. Tracer finds exact copies, near-duplicates and paraphrases, highlights the matching spans and dates each source with independent Wayback Machine evidence — in your browser.">
+<meta property="og:title" content="Tracer — where did this text come from?">
+<meta property="og:description" content="Exact copies, near-duplicates and paraphrases, with highlighted spans and archive dates you can check.">
+<meta property="og:image" content="https://temirlanzzz.github.io/tracer/docs/screenshot.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23121211'/%3E%3Cpath d='M7 23 L16 9 L25 23' fill='none' stroke='%23f4f3ef' stroke-width='2'/%3E%3Ccircle cx='16' cy='9' r='3.5' fill='%23ff5a1f'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>try{const t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<header class="wrap top">
+  <a class="name" href="./"><i></i>tracer</a>
+  <nav>
+    <a href="https://temirlanzzz.github.io">← temirlan</a>
+    <a class="hide-sm" href="https://github.com/temirlanzzz/tracer">github</a>
+    <button class="icon-btn" id="theme" type="button" aria-label="Toggle dark mode">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6"/><path d="M8 2a6 6 0 0 0 0 12z" fill="currentColor"/></svg>
+    </button>
+  </nav>
+</header>
+
+<main>
+<section class="wrap hero">
+  <div class="label">content provenance · shingles + minhash + minilm · wayback dates</div>
+  <h1>Where did this <em>text</em> come from?</h1>
+  <p class="lede">Paste a passage and the places you suspect it came from. Tracer sorts them into <b>exact copies, near-duplicates and paraphrases</b>, highlights the matching words, and dates each source with <b>evidence the page can't fake</b>: when the Wayback Machine first saw it.</p>
+</section>
+
+<section class="wrap demo" aria-label="Provenance tracer">
+  <div class="panel">
+    <div class="inputs">
+      <div>
+        <div class="panel-head">
+          <label class="label" for="suspect">suspect text</label>
+          <span class="label" id="sus-count">0 words</span>
+        </div>
+        <textarea id="suspect" class="big" spellcheck="false" placeholder="Paste the text you want to trace…"></textarea>
+        <p class="hint">Compared as word 5-grams after lower-casing and stripping punctuation.</p>
+      </div>
+      <div>
+        <div class="panel-head">
+          <span class="label">candidate sources</span>
+          <span class="label" id="cand-count"></span>
+        </div>
+        <div class="cands" id="cands"></div>
+        <div class="btns" style="margin-top:8px">
+          <button class="btn" type="button" id="add">+ add source</button>
+        </div>
+        <p class="hint">A URL alone works for Wikipedia pages and for sites that allow cross-origin reads. Most sites don't — then paste the page text too, and the URL is still used for archive dating.</p>
+      </div>
+    </div>
+
+    <div class="runbar" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line)">
+      <div class="opts">
+        <label class="chk"><input type="checkbox" id="opt-sem" checked> paraphrase model (MiniLM, ~23 MB once)</label>
+        <label class="chk"><input type="checkbox" id="opt-wb" checked> live Wayback probes</label>
+      </div>
+      <div class="btns">
+        <button class="btn" type="button" id="example">load example</button>
+        <button class="btn primary" type="button" id="run">trace</button>
+      </div>
+    </div>
+    <details class="adv" id="adv">
+      <summary>use a Tracer server (web search, CDX dates, full-page fetch)</summary>
+      <div class="body">
+        <input type="url" class="mono" id="server" placeholder="http://localhost:8000" spellcheck="false">
+        <label class="chk"><input type="checkbox" id="opt-search"> let the server search the web for more candidates</label>
+        <p class="hint">Run it yourself from <a href="https://github.com/temirlanzzz/tracer/tree/main/server">/server</a> (FastAPI or Docker). Leave empty to run everything in this tab.</p>
+      </div>
+    </details>
+    <ul class="log" id="log" aria-live="polite"></ul>
+  </div>
+
+  <div id="results" hidden>
+    <div class="panel verdict" id="verdict"></div>
+    <div class="panel graph">
+      <div class="panel-head">
+        <span class="label">origin graph · on a timeline</span>
+        <span class="label" id="graph-note"></span>
+      </div>
+      <div id="graph"></div>
+      <div class="legend">
+        <span><svg viewBox="0 0 12 12"><circle cx="6" cy="6" r="4.5" fill="var(--ink)"/></svg>first archived (independent)</span>
+        <span><svg viewBox="0 0 12 12"><rect x="1.5" y="1.5" width="9" height="9" fill="var(--ink)"/></svg>first wiki revision</span>
+        <span><svg viewBox="0 0 12 12"><circle cx="6" cy="6" r="4" fill="var(--card)" stroke="var(--ink-3)" stroke-width="1.5"/></svg>what the page claims</span>
+        <span><svg viewBox="0 0 12 12"><path d="M1 9 Q6 1 11 9" fill="none" stroke="var(--accent)" stroke-width="1.5"/></svg>copied from origin</span>
+      </div>
+    </div>
+    <div class="res" id="cards"></div>
+  </div>
+</section>
+
+<section class="wrap write">
+  <div class="sec">
+    <h2>How it works</h2>
+    <div class="body">
+      <p>Every candidate goes through the same steps, all in this tab unless you point it at a server.</p>
+      <ol>
+        <li><b>Text in.</b> Pasted text is used as is. A Wikipedia URL is fetched through the Wikipedia API, which allows cross-origin reads. Any other URL is tried directly; when the site blocks it (most do), the card says so and asks you to paste the text.</li>
+        <li><b>Lexical match.</b> Both texts are lower-cased, stripped of punctuation and diacritics, and cut into overlapping 5-word shingles. I compute the <b>exact Jaccard</b> of the two shingle sets, a <b>128-permutation MinHash</b> estimate of it, and <b>containment</b>: the share of the suspect's shingles found in the candidate. Containment is the one that decides, because a copy usually sits inside a bigger page full of navigation and other text.</li>
+        <li><b>Paraphrase.</b> Lexical overlap can't see a rewrite, so MiniLM (<code>all-MiniLM-L6-v2</code>, 8-bit, run by transformers.js in a Web Worker) embeds the suspect in passages of at least 12 words, and every candidate sentence once; a window of 1–3 consecutive candidate sentences is the word-weighted mean of their vectors, because a paraphrase merges and splits sentences. The <b>semantic</b> score is the share of suspect words whose passage has a candidate window at cosine ≥ 0.60. Those passage pairs get a dotted underline in the side-by-side view.</li>
+        <li><b>Class.</b> Containment ≥ 0.90 is an exact copy. ≥ 0.40 (or Jaccard ≥ 0.40) is a near-duplicate. Otherwise, semantic coverage ≥ 0.35 is a paraphrase, and containment ≥ 0.05 is a partial quote. Anything below that is unrelated.</li>
+        <li><b>Dates.</b> For URLs I ask the Wayback Machine when it first captured the page. Wikipedia pages also get the timestamp of their first revision. What the page says about itself is shown too, but only as a claim. <b>The origin is the related source with the earliest independent date.</b> Self-reported dates only count when nothing independent exists.</li>
+      </ol>
+      <p>The <a href="https://github.com/temirlanzzz/tracer/tree/main/server">server</a> in the repo runs the same pipeline in Python with the same hash functions (a parity test checks the browser and server agree bit for bit). It adds web search (DuckDuckGo HTML, or Brave/SerpAPI with a key), full-page fetch with trafilatura, htmldate for the page's claimed date, and Wayback CDX for exact first-capture timestamps.</p>
+    </div>
+  </div>
+
+  <div class="sec" id="results-sec">
+    <h2>Measured results</h2>
+    <div class="body" id="measured">
+      <p>All numbers are from runs on 2026-10-14 on my laptop (Windows, Chrome 155 headless with a fresh profile, so nothing cached). The example is the opening of <i>Pride and Prejudice</i>, chapter 1 (342 words, 338 distinct 5-grams), against six sources.</p>
+      <div class="tbl-wrap"><table>
+        <tr><th>source</th><th>containment</th><th>jaccard</th><th>minhash</th><th>semantic</th><th>class</th></tr>
+        <tr><td>pemberley.com chapter page</td><td>1.000</td><td>0.377</td><td>0.336</td><td>1.00</td><td class="acc">exact copy</td></tr>
+        <tr><td>Gutenberg #1342 chapter I</td><td>1.000</td><td>0.398</td><td>0.383</td><td>1.00</td><td class="acc">exact copy</td></tr>
+        <tr><td>study-guide copy (mine)</td><td>0.447</td><td>0.350</td><td>0.414</td><td>0.68</td><td>near-duplicate</td></tr>
+        <tr><td>modern retelling (mine)</td><td>0.021</td><td>0.012</td><td>0.008</td><td>0.52</td><td>paraphrase</td></tr>
+        <tr><td>Wikipedia article (live)</td><td>0.065</td><td>0.002</td><td>0.016</td><td>0.18</td><td>partial quote</td></tr>
+        <tr><td>Moby-Dick opening</td><td>0.000</td><td>0.000</td><td>0.000</td><td>0.00</td><td>unrelated</td></tr>
+      </table></div>
+      <div class="kv">
+        <div><span class="label">cold run, text analysis</span><div class="v">19.7 s</div></div>
+        <div><span class="label">of which MiniLM load + embed</span><div class="v">7.1 + 12.5 s</div></div>
+        <div><span class="label">model already cached</span><div class="v">13.0 s</div></div>
+        <div><span class="label">lexical pass, 6 sources</span><div class="v">0.1 s</div></div>
+      </div>
+      <p><b>Dates.</b> The Wayback Machine first captured the pemberley.com chapter page on <b>1998-12-02</b> (CDX, 08:54:41 UTC). The page's own metadata, read by htmldate, says <b>2004-01-01</b>. The Gutenberg HTML file was first captured on 2008-09-20, ten years after the release date Gutenberg prints in the book (June 1, 1998). The Wikipedia article's first revision is 2001-09-26, its first capture 2004-05-04. So pemberley.com wins on independent evidence, which matches the date in my original write-up.</p>
+      <p><b>The live probes are approximate.</b> The browser can only use the Wayback availability API (see limits). Over five cold runs it returned pemberley's 1998-12-02 on three and 1999-05-04 on two, and Gutenberg's 2008-09-20 every time, in 4–8 requests each. For Wikipedia it returned 2004-05-04 once and 2004-07-05 the other time (8 and 20 requests). The second run waited 60.5 s in total for those probes. The results are drawn after about 26 s and the dates are filled in when the probes finish.</p>
+      <p><b>Server, with web search.</b> The FastAPI version with DuckDuckGo and no API keys: 2 quoted queries returned 12 URLs. 7 were fetched and 5 failed (Goodreads refused the connection, and three sites answered 403). Of the 7, 5 were exact copies, 1 a near-duplicate and 1 a partial quote. The earliest independent evidence was <b>authorama.com, first archived 2004-10-09</b>, while its metadata claims <b>2025-01-01</b>. janeausten.org claims 2026-01-01 and was archived in 2021. 48.4 s cold, 21.8–24.3 s with the Wayback cache warm; the rest is page fetching. <b>21 pytest tests pass</b>, including a parity test showing that the browser and the server compute identical tokens, hashes, MinHash signatures and scores.</p>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>What I learned</h2>
+    <div class="body" id="learned">
+      <p><b>Page metadata lies, in both directions.</b> pemberley.com says 2004 and authorama.com says 2025, but the archive saw them in 1998 and 2004. It goes the other way too: Gutenberg's printed release date (1998) is earlier than the archive's first capture of that URL (2008), and it's probably true, since the file just moved. That's why the tool only falls back on claims, and why it calls an archive date an upper bound rather than "the" date.</p>
+      <p><b>Containment, not Jaccard, decides "copy".</b> Both real copies score Jaccard below 0.40, because the copied passage sits inside a page with navigation and the rest of the chapter. Jaccard would have labelled two verbatim copies as merely "near". The right question is what share of the suspect is found inside the candidate.</p>
+      <p><b>Sentence-by-sentence embeddings miss paraphrases.</b> My first version averaged the best sentence-to-sentence cosine. That scored my retelling 0.55 and the Wikipedia plot summary 0.42, too close to separate. Rewrites merge and split sentences, so now I compare suspect passages against 1–3 sentence windows of the candidate and count how much of the suspect has a match at ≥ 0.60. That gives 0.52 against 0.18. Building each window from averaged sentence vectors gives the same scores and cut the browser embedding time from 58 s to about 10 s.</p>
+      <p><b>CORS shapes the product.</b> Browsers can't read the archive's best endpoint (CDX) or almost any source page. A static demo has to be built around the few open doors: Wikipedia's API and the Wayback availability API. The full pipeline lives in the server.</p>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>Limits</h2>
+    <div class="body">
+      <p><b>What the browser version can't do.</b> I checked each endpoint with <code>curl -H "Origin: https://temirlanzzz.github.io"</code>:</p>
+      <ul>
+        <li><code>web.archive.org/cdx/search/cdx</code>: no CORS header, so browsers can't read it. This is the exact first-capture API, and only the server uses it.</li>
+        <li><code>web.archive.org/web/&lt;ts&gt;id_/&lt;url&gt;</code> (raw archived pages): no CORS header, so browsers can't read old page text.</li>
+        <li><code>wayback-api.archive.org/wayback/available</code>: sends <code>Access-Control-Allow-Origin: *</code>, so it works. It only answers "the closest capture to T", so the browser probes Jan 1 and Jul 1 of each year from 1996. The answer is the earliest capture those probes hit, which is an upper bound. Sometimes the API returns nothing, or an HTML "Temporarily Offline" page that fails CORS; the UI says so when that happens. (<code>archive.org/wayback/available</code> timed out from my network, so I use the <code>wayback-api</code> host.)</li>
+        <li>Page text: only Wikipedia (its API sends CORS headers) and the rare site that allows cross-origin reads. For anything else you paste the text. In the example, the pemberley.com and Gutenberg texts were captured by my build script and are labelled that way. The "recorded CDX" dates next to them come from a server run on 2026-10-14.</li>
+        <li>No web search. Search engines don't allow cross-origin calls without a key you would have to expose, so finding candidates is a server feature.</li>
+      </ul>
+      <p><b>Both versions.</b> The thresholds (0.90 / 0.40 / 0.05 containment, 0.35 semantic coverage) are tuned on one example, not on a labelled benchmark. The paraphrase margin is modest (0.52 vs 0.18), and MiniLM will call a close summary of the same scene a paraphrase. The two sources marked "written for this demo" are mine, made to show a near-duplicate and a paraphrase. The server's embeddings are optional (<code>requirements-embeddings.txt</code> pulls in PyTorch). Without them it reports <code>semantic: null</code> and can't see paraphrases, and that path isn't covered by the tests. A first capture tells you when the archive noticed a page, not when someone wrote the text: this one was written in 1813.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="wrap">
+  <span class="label">tracer · Temirlan Zarymkanov · MIT</span>
+  <span class="label"><a href="https://github.com/temirlanzzz/tracer">source</a> · <a href="https://temirlanzzz.github.io">more projects</a></span>
+</footer>
+
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>
