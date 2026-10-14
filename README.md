@@ -111,5 +111,3 @@ scripts/parity.mjs         writes the parity fixture from the JS module
 - The two "written for this demo" sources are my own text, made to show a near-duplicate and a paraphrase.
 - Server embeddings are optional (PyTorch). Without them it reports `semantic: null`, and that path isn't covered by the tests.
 - An archive date is when the archive noticed a page, not when the text was written (here: 1813).
-
-MIT © Temirlan Zarymkanov
