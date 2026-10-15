@@ -1,0 +1,35 @@
+name: Workbench checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: server/requirements.txt
+      - run: pip install -r server/requirements.txt
+      - run: pytest -q
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: node scripts/parity.mjs && git diff --exit-code server/tests/fixtures/parity.json
+      - run: npx playwright install --with-deps chromium
+      - name: Browser workflow and screenshots
+        run: |
+          python -m http.server 8083 > /tmp/tracer-http.log 2>&1 &
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8083/ > /dev/null && break; sleep 1; done
+          npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: workbench-screenshots
+          path: docs/workbench-*.png
+          if-no-files-found: ignore

@@ -6,7 +6,8 @@ import os
 import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
+from .safety import validate_url
 
 from . import __version__, embed
 from .pipeline import trace
@@ -19,16 +20,28 @@ app.add_middleware(CORSMiddleware, allow_origins=os.environ.get("TRACER_CORS", "
 
 
 class Candidate(BaseModel):
-    url: str | None = None
-    text: str | None = None
-    label: str | None = None
-    claimed: dict | None = None
+    url: str | None = Field(default=None, max_length=2048)
+    text: str | None = Field(default=None, max_length=100_000)
+    label: str | None = Field(default=None, max_length=200)
+    claimed: dict[str, str] | None = None
+
+    @field_validator('url')
+    @classmethod
+    def safe_url(cls, value):
+        return validate_url(value) if value else value
+
 
 
 class TraceRequest(BaseModel):
     text: str = Field(min_length=20, max_length=50_000)
     candidates: list[Candidate] = Field(default_factory=list, max_length=30)
     search: bool = False
+
+    @model_validator(mode='after')
+    def total_text_limit(self):
+        if len(self.text) + sum(len(c.text or '') for c in self.candidates) > 1_000_000:
+            raise ValueError('Combined text exceeds one million characters')
+        return self
 
 
 @app.get("/api/health")

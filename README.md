@@ -1,10 +1,20 @@
-# Tracer — content provenance
+# Tracer — evidence workbench
 
-Paste a text and the places you suspect it came from. Tracer sorts them into exact copies, near-duplicates and paraphrases, highlights the matching words, and dates each source with evidence the page can't fake: when the Wayback Machine first saw it.
+Paste a text and the places you suspect it came from. Tracer sorts them into exact copies, near-duplicates and paraphrases, highlights the matching words, and compares page-level archive dates. Similarity is a lead, not proof of copying or authorship.
 
 **Live demo: https://temirlanzzz.github.io/tracer/** (runs in your browser, no server, no keys; click "load example")
 
-![Tracer tracing the opening of Pride and Prejudice](docs/screenshot.png)
+## Investigation workflow
+
+- **Case shelf:** explicitly save up to 20 named cases in this browser. Same-title saves replace the prior case. Nothing is automatically saved; browser storage can be cleared or unavailable.
+- **Portable case files:** export/import a versioned, input-only JSON format. Imports validate lengths, source count and URL schemes, discard unknown fields, clear server settings and require a fresh comparison. They cannot inject trusted archive results.
+- **Evidence report:** download a plain-text review record with scores, available archive links, missing evidence and interpretation caveats. It contains private passage text; review before sharing.
+- **Interruptible work:** Cancel aborts network requests, terminates model work and suppresses stale results. Partial results remain explicitly incomplete. A later run starts fresh.
+- **Evidence-first design:** responsive paper-and-ink workbench, accessible input names, keyboard focus, touch-sized controls, light/dark themes and direction-free similarity links.
+
+The screenshot below documents the previous interface; new browser screenshots have not been verified in the restricted build environment.
+
+![Previous Tracer interface](docs/screenshot.png)
 
 There are two versions in this repo:
 
@@ -17,7 +27,7 @@ There are two versions in this repo:
 2. **Lexical.** Lower-case, strip punctuation and diacritics, then cut into word 5-grams. Compute exact Jaccard, a MinHash estimate (128 permutations, FNV-1a + mulberry32-seeded affine hashes), and **containment**: the share of the suspect's 5-grams found in the candidate.
 3. **Semantic.** `Xenova/all-MiniLM-L6-v2` (8-bit, transformers.js 3.8.1, in a Web Worker) embeds suspect passages (≥ 12 words) and candidate sentences. Candidate windows of 1–3 sentences are word-weighted means of sentence vectors. *Semantic coverage* is the share of suspect words whose passage has a window at cosine ≥ 0.60.
 4. **Class.** containment ≥ 0.90 → exact copy. ≥ 0.40 (or Jaccard ≥ 0.40) → near-duplicate. Otherwise coverage ≥ 0.35 → paraphrase, and containment ≥ 0.05 → partial quote. Anything else is unrelated.
-5. **Origin.** The exact / near / paraphrase source with the earliest *independent* date (first archive capture, or first Wikipedia revision). A page's own claimed date is shown and flagged, and only used when nothing independent exists.
+5. **Earliest dated page.** The exact / near / paraphrase candidate with the earliest *independent page-level* date (first archive capture, or first Wikipedia revision). A page's own claimed date is shown and flagged, and only used when nothing independent exists.
 
 `server/tracer/textsim.py` mirrors `assets/js/textsim.js` bit for bit. `server/tests/test_parity.py` checks the Python output against `server/tests/fixtures/parity.json`, which `node scripts/parity.mjs` writes from the JS module.
 
@@ -66,7 +76,7 @@ Server:
 ```bash
 python -m venv .venv && . .venv/bin/activate     # Windows: .venv\Scripts\activate
 pip install -r server/requirements.txt
-pytest                                            # 21 tests
+pytest
 uvicorn tracer.main:app --app-dir server --port 8787
 # optional: BRAVE_API_KEY=... or SERPAPI_KEY=... ; TRACER_CACHE_DIR=.cache for the Wayback cache
 # optional paraphrase detection on the server: pip install -r server/requirements-embeddings.txt
@@ -111,3 +121,27 @@ scripts/parity.mjs         writes the parity fixture from the JS module
 - The two "written for this demo" sources are my own text, made to show a near-duplicate and a paraphrase.
 - Server embeddings are optional (PyTorch). Without them it reports `semantic: null`, and that path isn't covered by the tests.
 - An archive date is when the archive noticed a page, not when the text was written (here: 1813).
+
+
+## Verification for the workbench update
+
+```bash
+pytest
+npm ci
+npm test
+node scripts/parity.mjs
+node --check assets/js/app.js
+# Optional real-browser smoke (requires Playwright + Chromium):
+python -m http.server 8083
+node scripts/browser-smoke.cjs
+```
+
+Verified locally: **34 Python tests and 9 Node tests pass**, including a DOM-level compare/save/restore/cancel/stale-response test and delayed-boot regressions for case opening, importing, editing and failed example fetches. The parity fixture regenerates without a diff. Python emits one upstream Starlette/AnyIO deprecation warning.
+
+The deterministic tests cover case round-trips, hostile imports/URLs, discarded forged evidence, report caveats, request limits, private/mixed-address DNS rejection, redirect revalidation and bounded response handling. The browser smoke script covers comparing, saving/opening, case import/export, report export, cancellation/retry, stale result clearing, mobile overflow and console errors. GitHub Actions runs the Python, Node and browser checks on push/PR and uploads screenshots; it does not deploy. Browser execution and fresh screenshots are blocked in the current sandbox by Chromium's Unix-socket restriction; do not treat that script as a completed visual/accessibility audit. Live providers and optional MiniLM downloads have not been revalidated in this update. Earlier measurements above are historical, not new benchmark results.
+
+## Self-hosted server security
+
+The API caps candidate text at 100,000 characters, combined text at one million characters, URLs at 2,048 characters and candidate count at 30. Page fetching rejects credentials, non-HTTP(S) schemes, unusual ports, local literal addresses and non-public DNS answers. Every redirect is revalidated (maximum five redirects); decoded responses stop at 2 MB and only text/HTML is accepted. These are defense-in-depth checks, **not a hardened public fetch proxy**: DNS can change between validation and the connection. Use an outbound firewall that blocks private/reserved networks, bind to localhost, and add authentication/rate limiting before any shared deployment. Default CORS remains permissive for the existing static demo; set TRACER_CORS to your trusted origin for shared use.
+
+Archive capture dates and first Wikipedia revisions are not passage-specific: this tool does not verify that the matching text occurred in the archived version. Missing captures do not establish absence. The API's historical `origin` field is retained for compatibility, but it means earliest dated matching candidate, never established authorship.

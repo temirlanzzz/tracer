@@ -27,6 +27,9 @@ def test_origin_prefers_independent_archive_date_over_earlier_claim():
 @respx.mock
 def test_trace_endpoint_end_to_end(tmp_path, monkeypatch):
     monkeypatch.setenv("TRACER_CACHE_DIR", str(tmp_path))
+    async def public_host(url):
+        pass
+    monkeypatch.setattr("tracer.fetch.require_public_host", public_host)
     respx.get("https://blog.example/post").mock(return_value=httpx.Response(200, html=NEW))
 
     def cdx(request):
